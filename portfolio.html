@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portfolio — Clone Template</title>
+  <meta name="description" content="A clean, single‑file clone template inspired by kishannayak.in" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b1020;  /* deep navy */
+      --card:#0f1530; /* slightly lighter */
+      --text:#e6e7ee; /* off‑white */
+      --muted:#a3acc5; /* soft slate */
+      --accent:#5de4c7; /* teal */
+      --accent-2:#9b8cff; /* purple */
+      --stroke:rgba(255,255,255,0.06);
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(1200px 800px at 10% 0%,rgba(93,228,199,.08),transparent),radial-gradient(800px 600px at 90% 10%,rgba(155,140,255,.08),transparent),var(--bg);color:var(--text)}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+
+    /* Navbar */
+    .nav{position:sticky;top:0;z-index:50;backdrop-filter:saturate(180%) blur(14px);background:linear-gradient(180deg,rgba(11,16,32,.85),rgba(11,16,32,.55));border-bottom:1px solid var(--stroke)}
+    .wrap{max-width:1100px;margin:0 auto;padding:0 18px}
+    .nav-inner{display:flex;align-items:center;justify-content:space-between;height:68px}
+    .brand{font-weight:700;letter-spacing:.4px}
+    .brand span{color:var(--accent)}
+    .nav ul{list-style:none;display:flex;gap:18px;padding:0;margin:0}
+    .nav a{padding:10px 12px;border-radius:12px;color:var(--muted);font-weight:500}
+    .nav a:hover,.nav a.active{color:var(--text);background:rgba(255,255,255,.06)}
+
+    /* Hero */
+    .hero{padding:90px 0 60px;display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center}
+    .hero h1{font-size:44px;line-height:1.1;margin:0 0 10px}
+    .sub{font-size:18px;color:var(--muted);max-width:680px}
+    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--stroke);background:rgba(255,255,255,.04);padding:10px 14px;border-radius:999px;margin:14px 0}
+    .type{border-right:2px solid var(--accent);padding-right:6px;white-space:nowrap;overflow:hidden}
+    .cta{display:flex;gap:12px;margin-top:18px}
+    .btn{padding:12px 16px;border-radius:14px;border:1px solid var(--stroke);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));color:var(--text);font-weight:600;box-shadow:var(--shadow)}
+    .btn.primary{background:linear-gradient(180deg,var(--accent),#41b09b);color:#041a16;border:none}
+
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow)}
+
+    .hero .image{position:relative}
+    .ring{position:absolute;inset:-14px;border-radius:24px;background:conic-gradient(from 0deg,rgba(93,228,199,.18),rgba(155,140,255,.18),transparent 60%);filter:blur(20px);z-index:-1}
+    .avatar{border-radius:18px;border:1px solid var(--stroke)}
+
+    /* Section */
+    section{padding:70px 0}
+    .section-title{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .section-title h2{margin:0;font-size:28px}
+    .section-title .bar{height:10px;width:28px;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+    .grid{display:grid;gap:18px}
+
+    /* About */
+    .about{grid-template-columns:1fr 1fr}
+    .kvs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:12px}
+    .kv{padding:16px;border-radius:16px;border:1px dashed var(--stroke);text-align:center}
+    .kv h3{margin:0;font-size:26px}
+    .kv p{margin:8px 0 0;color:var(--muted)}
+
+    /* Skills */
+    .skills-list{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    .skill{padding:16px;border-radius:16px;border:1px solid var(--stroke)}
+    .meter{margin-top:6px;height:10px;border-radius:10px;background:#1b2140;overflow:hidden}
+    .meter>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+
+    /* Resume */
+    .timeline{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .item{padding:18px;border-radius:16px;border:1px solid var(--stroke);position:relative}
+    .item h4{margin:0 0 6px}
+    .item small{color:var(--muted)}
+
+    /* Portfolio */
+    .cards{grid-template-columns:repeat(3,1fr)}
+    .work{overflow:hidden}
+    .work img{aspect-ratio:4/3;object-fit:cover;transition:transform .4s}
+    .work:hover img{transform:scale(1.06)}
+    .work .meta{padding:12px}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{font-size:12px;padding:6px 8px;border-radius:999px;border:1px solid var(--stroke);color:var(--muted)}
+
+    /* Services */
+    .services{grid-template-columns:repeat(3,1fr)}
+    .svc{padding:18px}
+
+    /* Contact */
+    .contact{grid-template-columns:1fr 1fr}
+    form{display:grid;gap:10px}
+    input,textarea{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--stroke);background:#0c1230;color:var(--text)}
+    textarea{min-height:120px;resize:vertical}
+
+    /* Footer */
+    footer{padding:32px 0;color:var(--muted);border-top:1px solid var(--stroke)}
+
+    /* Responsive */
+    @media (max-width: 980px){
+      .hero{grid-template-columns:1fr;}
+      .about,.skills-list,.timeline,.cards,.services,.contact{grid-template-columns:1fr}
+      .cards{grid-template-columns:1fr 1fr}
+    }
+    @media (max-width: 640px){
+      .nav ul{display:none}
+      .cards{grid-template-columns:1fr}
+      .hero h1{font-size:34px}
+    }
+  </style>
+</head>
+<body>
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="wrap nav-inner">
+      <a href="#home" class="brand">Ninad <span>S P</span></a>
+      <ul>
+        <li><a class="active" href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#resume">Resume</a></li>
+        <li><a href="#portfolio">Portfolio</a></li>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header id="home" class="wrap hero">
+    <div>
+      <div class="pill">Hi, I'm</div>
+      <h1>Ninad S P</h1>
+      <p class="sub">
+        I'm a <span class="type" id="type"></span>
+      </p>
+      <p class="sub">Creative developer focused on craft, speed and delightful UX across web & mobile.</p>
+      <div class="cta">
+        <a class="btn primary" href="#contact">Hire Me</a>
+        <a class="btn" href="#portfolio">See Work</a>
+      </div>
+    </div>
+    <div class="image card">
+      <div class="ring"></div>
+      <img class="avatar" src="" alt="Portrait"/>
+    </div>
+  </header>
+
+  <!-- About -->
+  <section id="about">
+    <div class="wrap">
+      <div class="section-title"><div class="bar"></div><h2>About</h2></div>
+      <div class="grid about">
+        <div class="card" style="padding:18px">
+          <p>
+            As a quick‑thinking engineer with a love for clean design and scalable systems, I build
+            performant apps and sites that feel effortless to use. I’m adaptable, collaborative,
+            and comfortable owning projects end‑to‑end.
+          </p>
+          <div class="kvs">
+            <div class="kv"><h3 id="count-clients">0</h3><p>Happy Clients</p></div>
+            <div class="kv"><h3 id="count-projects">0</h3><p>Projects</p></div>
+            <div class="kv"><h3 id="count-team">0</h3><p>Team Members</p></div>
+          </div>
+        </div>
+        <div class="card" style="padding:18px">
+          <h3>Web & Mobile Developer</h3>
+          <div class="grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+            <div><small class="muted">Birthday</small><div>20 mar 2006</div></div>
+            <div><small class="muted">City</small><div>Bengaluru, IN</div></div>
+            <div><small class="muted">Degree</small><div>Diploma CSE</div></div>
+            <div><small class="muted">Freelance</small><div>Available</div></div>
+          </div>
+          <div style="margin-top:12px">
+            <a class="btn" href="#resume">View Resume</a>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin:26px 0 10px">Skills</h3>
+      <div class="skills-list">
+        <div class="skill"><div>HTML5 <b style="float:right">100%</b></div><div class="meter"><i style="width:100%"></i></div></div>
+        <div class="skill"><div>CSS3 <b style="float:right">90%</b></div><div class="meter"><i style="width:90%"></i></div></div>
+        <div class="skill"><div>JavaScript <b style="float:right">80%</b></div><div class="meter"><i style="width:80%"></i></div></div>
+        <div class="skill"><div>React JS <b style="float:right">70%</b></div><div class="meter"><i style="width:70%"></i></div></div>
+        <div class="skill"><div>React Native <b style="float:right">70%</b></div><div class="meter"><i style="width:70%"></i></div></div>
+        <div class="skill"><div>Figma <b style="float:right">50%</b></div><div class="meter"><i style="width:50%"></i></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Resume -->
+  <section id="resume">
+    <div class="wrap">
+      <div class="section-title"><div class="bar"></div><h2>Resume</h2></div>
+      <div class="timeline">
+        <div class="item card">
+          <h4>Freelance Developer & Designer</h4>
+          <small>2024 — 2025 • Remote</small>
+          <p>Delivered logos, landing pages, and full‑stack web apps for small businesses.</p>
+        </div>
+        <div class="item card">
+          <h4>Diploma — Computer Science & Engineering</h4>
+          <small>2023 — 2025 • SDM Polytechnic</small>
+          <p>Graduated with a CGPA 8.2/10. Final project: Face Expression Recognition (CNN).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Portfolio -->
+  <section id="portfolio">
+    <div class="wrap">
+      <div class="section-title"><div class="bar"></div><h2>Portfolio</h2></div>
+      <div class="grid cards">
+        <a class="card work" href="#" target="_blank" rel="noreferrer">
+          <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=1200&auto=format&fit=crop" alt="Work"/>
+          <div class="meta">
+            <strong>Auto Booking Platform</strong>
+            <div class="chips"><span class="chip">Next.js</span><span class="chip">Stripe</span></div>
+          </div>
+        </a>
+        <a class="card work" href="#" target="_blank" rel="noreferrer">
+          <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop" alt="Work"/>
+          <div class="meta">
+            <strong>Alumni Network</strong>
+            <div class="chips"><span class="chip">React</span><span class="chip">Firebase</span></div>
+          </div>
+        </a>
+        <a class="card work" href="#" target="_blank" rel="noreferrer">
+          <img src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?q=80&w=1200&auto=format&fit=crop" alt="Work"/>
+          <div class="meta">
+            <strong>School of Chess</strong>
+            <div class="chips"><span class="chip">Static</span><span class="chip">SEO</span></div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section id="services">
+    <div class="wrap">
+      <div class="section-title"><div class="bar"></div><h2>Services</h2></div>
+      <div class="grid services">
+        <div class="card svc"><h3>Web Development</h3><p>Modern, responsive sites and web apps with best‑in‑class performance.</p></div>
+        <div class="card svc"><h3>Mobile Apps</h3><p>Flutter / React‑Native apps designed for speed, reliability and UX.</p></div>
+        <div class="card svc"><h3>Digital Marketing</h3><p>SEO, analytics and content systems that grow with your business.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact">
+    <div class="wrap">
+      <div class="section-title"><div class="bar"></div><h2>Contact</h2></div>
+      <div class="grid contact">
+        <div class="card" style="padding:18px">
+          <h3>Let's build something</h3>
+          <p class="sub">Email: <a href="mailto:ninadgowda777@gmail.com">ninadgowda777@gmail.com</a></p>
+          <p class="sub">Phone: +91 8660187114</p>
+          <p class="sub">Location: Bengaluru, IN</p>
+        </div>
+        <form class="card" style="padding:18px" onsubmit="event.preventDefault();alert('Thanks! I\'ll get back to you.');this.reset();">
+          <input required placeholder="Your Name" />
+          <input type="email" required placeholder="Your Email" />
+          <input placeholder="Subject" />
+          <textarea required placeholder="Message"></textarea>
+          <button class="btn primary" type="submit">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">© <span id="year"></span> Ninad S P. Designed & built with ♥.</div>
+  </footer>
+
+  <script>
+    // Simple typewriter
+    const roles=["Web Developer","Mobile Developer","UI/UX Enthusiast","Problem Solver"];let i=0,j=0,dir=1;const el=document.getElementById('type');function tick(){const text=roles[i];j+=dir;el.textContent=text.slice(0,j);if(j===text.length){dir=-1;setTimeout(tick,1200);return}if(j===0){dir=1;i=(i+1)%roles.length}setTimeout(tick,70)}tick();
+
+    // Counters when visible
+    const counters=[{id:'count-clients',to:11},{id:'count-projects',to:30},{id:'count-team',to:6}];
+    const io=new IntersectionObserver((entries)=>{entries.forEach(e=>{if(e.isIntersecting){counters.forEach(c=>animateCount(c.id,c.to));io.disconnect()}})},{threshold:.4});
+    io.observe(document.querySelector('#about .kvs'));
+    function animateCount(id,to){const el=document.getElementById(id);let n=0;const step=Math.max(1,Math.floor(to/40));const t=setInterval(()=>{n+=step;el.textContent=n>=to?to:n;if(n>=to) clearInterval(t)},30)}
+
+    // Active link highlight on scroll
+    const links=[...document.querySelectorAll('.nav a')];
+    const sections=links.map(l=>document.querySelector(l.getAttribute('href')));
+    window.addEventListener('scroll',()=>{
+      const y=window.scrollY+90; // offset for sticky nav
+      let idx=0;sections.forEach((s,i)=>{if(s && s.offsetTop<=y) idx=i});
+      links.forEach((l,i)=>l.classList.toggle('active',i===idx));
+    });
+
+    document.getElementById('year').textContent=new Date().getFullYear();
+  </script>
+</body>
+</html>
