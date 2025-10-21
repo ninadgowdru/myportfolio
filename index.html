@@ -1,21 +1,41 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8"><title>CORS PoC</title></head>
+<head>
+  <meta charset="utf-8">
+  <title>CORS PoC</title>
+  <style>body{font-family:system-ui,Arial;padding:1rem} pre{white-space:pre-wrap;border:1px solid #ddd;padding:1rem;background:#f9f9f9}</style>
+</head>
 <body>
-<h3>CORS PoC — open console</h3>
+  <h2>CORS PoC — open DevTools Console & Network</h2>
+  <p id="status">Running PoC fetch...</p>
+  <pre id="out">waiting...</pre>
+
 <script>
-fetch('https://www.nasa.gov/wp-json/wp/v2/topic/187609', {
-  method: 'GET', mode: 'cors', credentials: 'include'
-})
-.then(r => r.text())
-.then(t => {
-  console.log('POC response length', t.length);
-  document.body.appendChild(document.createElement('pre')).innerText = t.slice(0,1000);
-})
-.catch(e => {
-  console.error('fetch error', e);
-  document.body.appendChild(document.createElement('pre')).innerText = 'fetch error: '+e;
-});
+const ENDPOINT = 'https://www.nasa.gov/wp-json/wp/v2/topic/187609';
+fetch(ENDPOINT, { method: 'GET', mode: 'cors', credentials: 'include' })
+  .then(async r => {
+    document.getElementById('status').innerText = 'Request status: ' + r.status;
+    const ct = r.headers.get('Content-Type') || '';
+    try {
+      if (ct.includes('json')) {
+        const j = await r.json();
+        document.getElementById('out').innerText = JSON.stringify(j, null, 2);
+        console.log('PoC JSON:', j);
+      } else {
+        const t = await r.text();
+        document.getElementById('out').innerText = t.slice(0, 2000);
+        console.log('PoC body:', t);
+      }
+    } catch (e) {
+      document.getElementById('out').innerText = 'Error parsing response: ' + e;
+      console.error(e);
+    }
+  })
+  .catch(e => {
+    document.getElementById('status').innerText = 'Fetch failed: ' + e;
+    document.getElementById('out').innerText = 'fetch error: ' + e;
+    console.error('fetch error', e);
+  });
 </script>
 </body>
 </html>
