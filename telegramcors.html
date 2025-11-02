@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>CORS Debug PoC</title>
+  <style>body{font-family:Arial;padding:18px}pre{background:#111;color:#eee;padding:10px;border-radius:6px}</style>
+</head>
+<body>
+  <h2>CORS Debug PoC — my.telegram.org</h2>
+  <p>Set endpoint and click Run. Open DevTools→Network & Console.</p>
+
+  <label>Endpoint: <input id="endpoint" style="width:80%" value="https://my.telegram.org/auth"></label>
+  <div style="margin-top:10px">
+    <button id="runCred">Run (credentials: include)</button>
+    <button id="runNoCred">Run (credentials: omit)</button>
+  </div>
+
+  <h3>Status</h3>
+  <div id="status">idle</div>
+  <h3>Headers</h3><pre id="hdrs">-</pre>
+  <h3>Body preview</h3><pre id="body">-</pre>
+  <h3>Error (exception)</h3><pre id="err">-</pre>
+
+<script>
+document.getElementById('runCred').onclick = ()=>runFetch('include');
+document.getElementById('runNoCred').onclick = ()=>runFetch('omit');
+async function runFetch(creds){
+  const ep = document.getElementById('endpoint').value;
+  document.getElementById('status').textContent = 'Running... (credentials: '+creds+')';
+  document.getElementById('hdrs').textContent = '';
+  document.getElementById('body').textContent = '';
+  document.getElementById('err').textContent = '';
+  try {
+    const r = await fetch(ep, { method:'GET', mode:'cors', credentials: creds, cache:'no-store' });
+    document.getElementById('status').textContent = 'Status: ' + r.status + ' ' + r.statusText + ' (type: ' + r.type + ')';
+    let out='';
+    for(const [k,v] of r.headers.entries()) out += k+': '+v+'\n';
+    document.getElementById('hdrs').textContent = out || '(no headers)';
+    const ct = r.headers.get('content-type') || '';
+    try {
+      if(ct.includes('json')) {
+        const j = await r.json();
+        document.getElementById('body').textContent = JSON.stringify(j, null, 2).slice(0, 16000);
+      } else {
+        const t = await r.text();
+        document.getElementById('body').textContent = t.slice(0,16000);
+      }
+    } catch(e2){
+      document.getElementById('body').textContent = 'Error reading body: '+e2;
+    }
+  } catch(e){
+    document.getElementById('status').textContent = 'Fetch threw exception';
+    document.getElementById('err').textContent = e && e.toString ? e.toString() : JSON.stringify(e);
+    console.error('Fetch exception', e);
+  }
+}
+</script>
+</body>
+</html>
