@@ -2,19 +2,34 @@
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>Simple CORS Proof — my.telegram.org</title>
-  <style>body{font-family:Arial;padding:16px}pre{background:#111;color:#fff;padding:12px;border-radius:6px;max-height:320px;overflow:auto}</style>
+  <title>Safe CORS Diagnostic PoC</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline' 'self'">
+  <style>
+    body{font-family:Arial;padding:16px;max-width:900px;margin:auto}
+    pre{background:#111;color:#fff;padding:12px;border-radius:6px;max-height:320px;overflow:auto}
+    .warn{background:#fff3cd;border:1px solid #ffeeba;padding:12px;border-radius:6px;color:#856404}
+  </style>
 </head>
 <body>
-  <h2>Simple CORS PoC — my.telegram.org</h2>
-  <p>
-    This PoC forces a CORS preflight (OPTIONS) by sending a custom header. Open <strong>DevTools → Network</strong> before clicking Run.
-  </p>
+  <h2>Safe CORS Diagnostic PoC</h2>
 
-  <label>Endpoint: <input id="endpoint" style="width:70%" value="https://my.telegram.org/auth"></label>
+  <div class="warn">
+    <strong>Warning:</strong> Use this page only to inspect request/response headers (OPTIONS/GET). Do <em>not</em> use it to exfiltrate data or to attack endpoints you do not have written authorization to test.
+  </div>
+
+  <p>This PoC forces a CORS preflight (OPTIONS) by sending a custom header. It is intended for diagnostic use only. Open <strong>DevTools &rarr; Network</strong> before clicking Run so you can inspect the OPTIONS/GET entries.</p>
+
+  <label>Endpoint (HTTPS only):<br>
+    <input id="endpoint" style="width:100%" value="https://example.com/" placeholder="https://target.example/path">
+  </label>
+
   <div style="margin-top:10px">
-    <button id="run">Run fetch (credentials: include)</button>
-    <button id="runNoCred">Run fetch (no credentials)</button>
+    <label><input type="radio" name="creds" value="omit" checked> No credentials (recommended)</label>
+    <label style="margin-left:12px"><input type="radio" name="creds" value="include"> Include credentials (only with explicit permission)</label>
+  </div>
+
+  <div style="margin-top:10px">
+    <button id="run">Run fetch (diagnostic)</button>
   </div>
 
   <h3>Status / Debug</h3>
@@ -27,35 +42,35 @@ const log = txt => {
   const el = document.getElementById('log');
   el.innerText = (el.innerText === '-' ? '' : el.innerText + '\n') + txt;
 };
-document.getElementById('run').onclick = ()=>runFetch('include');
-document.getElementById('runNoCred').onclick = ()=>runFetch('omit');
+document.getElementById('run').onclick = ()=>runFetch();
 
-async function runFetch(creds){
-  const ep = document.getElementById('endpoint').value;
+function runFetch(){
+  const ep = document.getElementById('endpoint').value.trim();
+  if(!ep || !/^https:\/\//i.test(ep)){ alert('Please enter a valid HTTPS endpoint (starts with https://).'); return; }
+
+  const creds = document.querySelector('input[name="creds"]:checked').value;
   document.getElementById('status').innerText = 'Running (credentials: ' + creds + ') — open DevTools→Network to inspect OPTIONS/GET';
   log('Starting fetch to: ' + ep + ' (credentials: ' + creds + ')');
 
-  try {
-    // custom header forces preflight so DevTools will show OPTIONS response
-    const r = await fetch(ep, {
-      method: 'GET',
-      mode: 'cors',
-      credentials: creds,
-      headers: { 'X-Poc-Test': '1' }
-    });
+  // Use a custom header to force preflight; this is diagnostic only
+  fetch(ep, {
+    method: 'GET',
+    mode: 'cors',
+    credentials: creds,
+    headers: { 'X-Poc-Test': '1' },
+  }).then(async r => {
     log('Fetch returned status: ' + r.status + ' ' + r.statusText);
     try {
       const text = await r.text();
-      log('Body (preview): ' + text.slice(0,1000));
+      log('Body (preview): ' + (text ? text.slice(0,800) : '[empty]'));
     } catch(e) {
       log('Error reading body: ' + e);
     }
     document.getElementById('status').innerText = 'Fetch completed (see log & Network)';
-  } catch (e) {
-    // expected in many CORS cases; still OK — Network tab will contain OPTIONS/GET
+  }).catch(e => {
     log('Fetch threw exception: ' + (e && e.toString ? e.toString() : JSON.stringify(e)));
     document.getElementById('status').innerText = 'Fetch threw exception. Inspect Network → OPTIONS/GET entries.';
-  }
+  });
 }
 </script>
 </body>
